@@ -139,7 +139,7 @@ for country in country_codes:
                     # Save data to CSV every 20 records
                     if record_counter % 20 == 0:
                         df = pd.DataFrame(property_data, columns=['Country', 'Address', 'Property Type', 'Price', 'Bedrooms', 'Bathrooms', 'Building Size', 'Link'])
-                        df.to_csv('property_listings new.csv', mode='a', header=False, index=False)
+                        df.to_csv('property_listings.csv', mode='a', header=False, index=False)
                         print(f"Saved {record_counter} records to CSV.")
 
                     # Adding a small delay to avoid being blocked
@@ -154,5 +154,5 @@ for country in country_codes:
 # Save any remaining data to CSV
 if property_data:
     df = pd.DataFrame(property_data, columns=['Country', 'Address', 'Property Type', 'Price', 'Bedrooms', 'Bathrooms', 'Building Size', 'Link'])
-    df.to_csv('property_listings new.csv', mode='a', header=False, index=False)
+    df.to_csv('property_listings.csv', mode='a', header=False, index=False)
     print("Final data saved to CSV.")
