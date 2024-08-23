@@ -1,3 +1,6 @@
+import pandas as pd
+import time
+import urllib.parse
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -5,24 +8,18 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
-import pandas as pd
-import time
-import urllib.parse
-# Download the ChromeDriver First
-# Path to the ChromeDriver executable
-chromedriver_path = 'C:/Users/DELL/Downloads/chromedriver-win64/chromedriver-win64/chromedriver.exe'  # Update this to the actual path
+from webdriver_manager.chrome import ChromeDriverManager
 
 # Function to initialize the Selenium driver
 def init_driver():
     chrome_options = Options()
-    # Uncomment the next line to enable headless mode, otherwise run in normal mode for testing
-    # chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--window-size=1920x1080")
     chrome_options.add_argument('--disable-blink-features=AutomationControlled')
-    return webdriver.Chrome(service=Service(chromedriver_path), options=chrome_options)
+    return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
 # Retry logic to handle WebDriver disconnections
 def scrape_page(url, retries=3):
@@ -35,31 +32,33 @@ def scrape_page(url, retries=3):
             )
             page_source = driver.page_source
             soup = BeautifulSoup(page_source, 'html.parser')
-            driver.quit()  # Close the driver after successful operation
+            driver.quit()
             return soup
         except Exception as e:
             print(f"Attempt {attempt + 1} failed: {e}")
-            driver.quit()  # Ensure driver is closed on failure
+            driver.quit()
             if attempt < retries - 1:
-                time.sleep(5)  # Wait before retrying
+                time.sleep(5)
             else:
-                raise e  # Raise the exception if all retries fail
+                raise e
 
 # Function to find the number of pages for a country
 def find_total_pages(country):
     initial_url = f'https://www.realestate.com.au/international/{urllib.parse.quote(country)}/p1'
     soup = scrape_page(initial_url)
     
-    # Look for the last page number in the pagination
     pagination = soup.find_all('li', class_='ant-pagination-item')
     
     if pagination:
         last_page_number = max([int(page.get('title')) for page in pagination if page.get('title').isdigit()])
         return last_page_number
     else:
-        return 1  # Default to 1 if no pagination is found
+        return 1
 
-# List of country codes to scrape based on your provided images
+# Base URL
+base_url = 'https://www.realestate.com.au'
+
+# List of country codes to scrape
 country_codes = [
     'al', 'ad', 'at', 'be', 'bg', 'hr', 'cy', 'cz', 'ee', 'fi', 'fr', 'de', 'gi', 'gr', 'hu', 'is', 'ie', 
     'it', 'lv', 'lu', 'mt', 'mc', 'nl', 'pl', 'pt', 'ro', 'sk', 'si', 'es', 'se', 'ch', 'tr', 'ua', 'gb',
@@ -70,11 +69,9 @@ country_codes = [
     'mg', 'mu', 'ma', 'ng', 're', 'za', 'tn', 'zm', 'fj', 'nz', 'vu'
 ]
 
-# Base URL
-base_url = 'https://www.realestate.com.au'
-
 # List to store property data
 property_data = []
+record_counter = 0
 
 # Loop through each country and dynamically determine the number of pages
 for country in country_codes:
@@ -100,30 +97,18 @@ for country in country_codes:
 
                     # Extract the property type
                     property_type_element = listing.find('div', class_='property-type')
-                    if property_type_element:
-                        property_type = property_type_element.text.strip()
-                        print(f"Extracted Property Type: {property_type}")
-                    else:
-                        property_type = 'N/A'
-                        print("Property type element not found.")
+                    property_type = property_type_element.text.strip() if property_type_element else 'N/A'
+                    print(f"Extracted Property Type: {property_type}")
 
                     # Extract the address
                     address_element = listing.find('div', class_='address')
-                    if address_element:
-                        address = address_element.text.strip()
-                        print(f"Extracted Address: {address}")
-                    else:
-                        address = 'N/A'
-                        print("Address element not found.")
+                    address = address_element.text.strip() if address_element else 'N/A'
+                    print(f"Extracted Address: {address}")
 
                     # Extract the price
                     price_element = listing.find('div', class_='displayListingPrice')
-                    if price_element:
-                        price = price_element.text.strip()
-                        print(f"Extracted Price: {price}")
-                    else:
-                        price = 'N/A'
-                        print("Price element not found.")
+                    price = price_element.text.strip() if price_element else 'N/A'
+                    print(f"Extracted Price: {price}")
 
                     # Extract all feature-items
                     features = listing.find_all('div', class_='feature-item')
@@ -135,7 +120,6 @@ for country in country_codes:
 
                     # Extract details based on feature-item content
                     for feature in features:
-                        # Check for bedrooms, bathrooms, and building size
                         img_alt = feature.find('img')['alt']
                         if 'bedrooms' in img_alt:
                             bedrooms = feature.get_text(strip=True)
@@ -150,6 +134,13 @@ for country in country_codes:
 
                     # Append the extracted data to the list
                     property_data.append((country, address, property_type, price, bedrooms, bathrooms, building_size, href))
+                    record_counter += 1
+
+                    # Save data to CSV every 20 records
+                    if record_counter % 20 == 0:
+                        df = pd.DataFrame(property_data, columns=['Country', 'Address', 'Property Type', 'Price', 'Bedrooms', 'Bathrooms', 'Building Size', 'Link'])
+                        df.to_csv('property_listings new.csv', mode='a', header=False, index=False)
+                        print(f"Saved {record_counter} records to CSV.")
 
                     # Adding a small delay to avoid being blocked
                     time.sleep(5)
@@ -160,9 +151,8 @@ for country in country_codes:
     except Exception as e:
         print(f"Error processing country {country}: {e}")
 
-# Create a DataFrame and display it
-df = pd.DataFrame(property_data, columns=['Country', 'Address', 'Property Type', 'Price', 'Bedrooms', 'Bathrooms', 'Building Size', 'Link'])
-print(df)
-
-# Save the DataFrame to a CSV file
-df.to_csv('C:/Users/DELL/Desktop/property_listings_by_country new.csv', index=False)
+# Save any remaining data to CSV
+if property_data:
+    df = pd.DataFrame(property_data, columns=['Country', 'Address', 'Property Type', 'Price', 'Bedrooms', 'Bathrooms', 'Building Size', 'Link'])
+    df.to_csv('property_listings new.csv', mode='a', header=False, index=False)
+    print("Final data saved to CSV.")
