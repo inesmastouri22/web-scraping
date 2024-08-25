@@ -11,7 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 from webdriver_manager.chrome import ChromeDriverManager
 
-# Function to initialize the Selenium driver
+#the Selenium driver
 def init_driver():
     chrome_options = Options()
     chrome_options.add_argument("--headless")
@@ -22,7 +22,6 @@ def init_driver():
     chrome_options.add_argument('--disable-blink-features=AutomationControlled')
     return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
-# Retry logic to handle WebDriver disconnections
 def scrape_page(url, retries=3):
     driver = init_driver()
     for attempt in range(retries):
@@ -110,7 +109,6 @@ for country in country_codes:
                     # Extract all feature-items
                     features = listing.find_all('div', class_='feature-item')
 
-                    # Initialize variables to hold the details
                     bedrooms = 'N/A'
                     bathrooms = 'N/A'
                     building_size = 'N/A'
@@ -138,8 +136,6 @@ for country in country_codes:
                         df = pd.DataFrame(property_data, columns=['Country', 'Address', 'Property Type', 'Price', 'Bedrooms', 'Bathrooms', 'Building Size', 'Link'])
                         df.to_csv('property List.csv', mode='a', header=False, index=False)
                         print(f"Saved {record_counter} records to CSV.")
-
-                    # Adding a small delay to avoid being blocked
                     time.sleep(5)
 
             except Exception as e:
