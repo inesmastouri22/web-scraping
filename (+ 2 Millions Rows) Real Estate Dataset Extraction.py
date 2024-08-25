@@ -43,7 +43,7 @@ def scrape_page(url, retries=3):
             else:
                 raise e
 
-# Function to find the number of pages for a country
+# The number of pages for a country
 def find_total_pages(country):
     initial_url = f'https://www.realestate.com.au/international/{urllib.parse.quote(country)}/p1'
     soup = scrape_page(initial_url)
@@ -56,10 +56,8 @@ def find_total_pages(country):
     else:
         return 1
 
-# Base URL
 base_url = 'https://www.realestate.com.au'
 
-# List of country codes to scrape
 country_codes = [
     'al', 'ad', 'at', 'be', 'bg', 'hr', 'cy', 'cz', 'ee', 'fi', 'fr', 'de', 'gi', 'gr', 'hu', 'is', 'ie', 
     'it', 'lv', 'lu', 'mt', 'mc', 'nl', 'pl', 'pt', 'ro', 'sk', 'si', 'es', 'se', 'ch', 'tr', 'ua', 'gb',
@@ -70,11 +68,9 @@ country_codes = [
     'mg', 'mu', 'ma', 'ng', 're', 'za', 'tn', 'zm', 'fj', 'nz', 'vu'
 ]
 
-# List to store property data
 property_data = []
 record_counter = 0
 
-# Loop through each country and dynamically determine the number of pages
 for country in country_codes:
     try:
         total_pages = find_total_pages(country)
@@ -152,7 +148,6 @@ for country in country_codes:
     except Exception as e:
         print(f"Error processing country {country}: {e}")
 
-# Save any remaining data to CSV
 if property_data:
     df = pd.DataFrame(property_data, columns=['Country', 'Address', 'Property Type', 'Price', 'Bedrooms', 'Bathrooms', 'Building Size', 'Link'])
     df.to_csv('property List.csv', mode='a', header=False, index=False)
