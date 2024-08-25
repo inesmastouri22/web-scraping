@@ -1,4 +1,4 @@
-#This Code allows you to extract more than 2 Million (All Countries) Properties data from Real Estate Website
+#This Code allows you to extract more than 2 Millions (All Countries) Properties data from Real Estate Website
 import pandas as pd
 import time
 import urllib.parse
